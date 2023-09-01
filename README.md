@@ -1,5 +1,5 @@
 
-<img align="right" src="Icon/Icon.svg" width="300" style="margin-top: 30px">
+<img align="right" src="Icon/g2.png" width="300" style="margin-top: 30px">
 
 ## Overview
 
