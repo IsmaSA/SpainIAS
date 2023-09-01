@@ -1,0 +1,143 @@
+
+
+library(devtools)
+create("C:/Users/Propietario/Documents/SpainIAS")
+
+
+
+##### Function to download species data:
+
+sp_data <- function(input_data, download = TRUE) {
+  # Create an empty data frame to store the results
+  results_df <- data.frame()
+
+  num_species <- if (is.character(input_data)) length(input_data) else nrow(input_data)
+
+  # Create a progress bar
+  pb <- txtProgressBar(min = 0, max = num_species, style = 3)
+
+  # If the input is a character string, make it into a data frame
+  if (is.character(input_data)) {
+    species_list <- data.frame(Species = input_data)
+  } else if (is.data.frame(input_data) && "Species" %in% colnames(input_data)) {
+    species_list <- input_data
+  } else {
+    stop("Invalid input! Please provide either a species name or a data frame with a 'Species' column.")
+  }
+
+  if (download) {
+    counter <- 0
+    # Loop through the species names in the 'Species' column of the data frame and fetch the occurrences
+    for (sp_name in species_list$Species) {
+      counter <- counter + 1
+
+      setTxtProgressBar(pb, counter)
+
+      sp_name1 <- sp_name
+      sp_data <- occ_data(scientificName = sp_name1,
+                          occurrenceStatus = "PRESENT",
+                          country="ES",
+                          hasCoordinate=TRUE, limit = 1000)
+
+      sp_data <-  sp_data[["data"]]
+
+      colum <- c("species", "decimalLatitude", "decimalLongitude","year","countryCode","coordinateUncertaintyInMeters")
+
+      # Identify missing columns and add them with NA values
+      missing_columns <- setdiff(colum, names(sp_data))
+
+      for (col in colum) {
+        if (!(col %in% names(sp_data))) {
+          sp_data[[col]] <- NA
+        }
+      }
+      sp_data <- sp_data[, colum, drop=FALSE]
+
+      results_df <- rbind(results_df, sp_data)
+      Sys.sleep(0.5)
+    }
+    close(pb)
+    return(results_df)
+  } else {
+    print(paste0("There are ", length(species_list$Species), " species in the input data. Set download = TRUE to download the records."))
+  }
+
+}
+
+
+
+##### Species data:
+
+
+plot_occurrences <- function(records, by.year = FALSE, all_species = TRUE, plot_type = "points") {
+
+  spain_map <- ne_countries(scale = "medium", returnclass = "sf") %>%
+    filter(admin == "Spain")
+
+  # Function to generate each plot
+  make_plot <- function(data) {
+    p <- ggplot() +
+      geom_sf(data = spain_map, fill = "grey80") +
+      coord_sf() +
+      theme_minimal()
+
+    if(plot_type == "points") {
+      if(by.year) {
+        p <- p + geom_point(data = data, aes(x = decimalLongitude, y = decimalLatitude, color = year), size = 1) +
+          scale_color_gradientn(name = "Year",
+                                colors = colorRampPalette(c("royalblue","springgreen", "yellow", "red"))(50),
+                                na.value = "grey")
+      } else {
+        p <- p + geom_point(data = data, aes(x = decimalLongitude, y = decimalLatitude), color = "blue", size = 1)
+      }
+    } else if (plot_type == "distribution") {
+
+      grid_extent <- extent(-10, 5, 35, 45) 
+      grid <- raster(grid_extent, res = 0.1667)
+      grid_count <- raster(grid)
+      occ_points <- sp::SpatialPoints(data.frame(lon = data$decimalLongitude, 
+                                                 lat = data$decimalLatitude))
+      grid_count <- rasterize(occ_points, grid_count, fun = "count")
+      grid_count_df <- as.data.frame(grid_count, xy=TRUE, na.rm = TRUE) #Remove NA values from raster
+      
+      p <- p + geom_tile(data = grid_count_df, aes(x = x, y = y, fill = layer)) +
+        scale_fill_gradient(name = "Density", low = "blue", high = "red", na.value = "grey")
+    }
+
+    p <- p + labs(title = paste("Species Occurrence in Spain:", unique(data$species)),
+                  x = "Longitude",
+                  y = "Latitude")
+
+    return(p)
+  }
+
+  if(all_species) {
+    p <- make_plot(records) +  labs(title = "Species Occurrence in Spain",
+                                    x = "Longitude",
+                                    y = "Latitude")
+    print(p)
+  } else {
+    unique_species <- unique(records$species)
+    for(sp in unique_species) {
+      sp_data <- subset(records, species == sp)
+      p <- make_plot(sp_data)
+      print(p)
+    }
+  }
+}
+
+
+plot_occurrences(records, by.year = T, all_species = F, plot_type = "distribution")
+
+
+
+
+
+
+
+
+
+
+
+
+
