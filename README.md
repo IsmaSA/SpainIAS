@@ -1,5 +1,5 @@
-![SpainIAS](Icon/Icon.svg)
 
+<img align="right" src="Icon/Icon.svg" width="300" style="margin-top: 30px">
 
 ## Overview
 
