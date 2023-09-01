@@ -1,0 +1,33 @@
+Type: Package
+Package: SpainIAS
+Title: Plot the occurrences of species in Spain.
+Version: 0.0.0.9000
+Authors@R: c(
+    person("Ismael", "Soto", , "isma-sa@hotmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-7288-6336")))
+
+Description: Plot the occurrences of species in Spain.
+License: MIT + file LICENSE
+BugReports: isma-sa@hotmail.com or isotoalmena@frov.jcu.cz
+Depends: 
+    R (>= 3.5.0)
+Imports: 
+    ggplot2,
+    sf,
+    rnaturalearth,
+    raster,
+    sp,
+    dplyr,
+    scales
+
+Suggests: 
+    ggmap,
+    leaflet,
+    tidyr,
+    stringr,
+    forcats,
+    magrittr 
+   
+Encoding: UTF-8
+LazyData: true
+
